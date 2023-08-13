@@ -109,7 +109,40 @@ class TradeStation(Broker):
 
     @property
     async def orders(self) -> Collection[Order]:
-        raise NotImplementedError()
+        async with httpx.AsyncClient() as client:
+            async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
+                with attempt:
+                    response = await client.get(
+                        url=self._build_url(f"/accounts/[[account]]/orders"), headers=self._headers
+                    )
+
+        if response.status_code != httpx.codes.OK:
+            raise IOError(
+                f"failed to get orders with a status code of "
+                f"{response.status_code}: {response.text}"
+            )
+
+        orders = response.json()["orders"]
+        orders = (
+            []
+            if orders == "null"
+            else [orders["order"]]
+            if type(orders["order"]) is dict
+            else orders["order"]
+        )
+
+        return [
+            Order(
+                id=order["id"],
+                name=order["symbol"],
+                side=order["side"],
+                type=order["type"],
+                status=OrderStatus(order["status"]),
+                executed_quantity=int(float(order["exec_quantity"])),
+                avg_fill_price=float(order["avg_fill_price"]),
+            )
+            for order in orders
+        ]
 
     async def cancel_order(self, order_id):
         raise NotImplementedError()
