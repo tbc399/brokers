@@ -17,9 +17,7 @@ class Alpaca(Broker):
         secret = environ.get("ALPACA_SECRET_KEY")
 
         self.client = TradingClient(api_key=api_key, secret_key=secret, paper=True)
-        self.market_client = StockHistoricalDataClient(
-            api_key=api_key, secret_key=secret
-        )
+        self.market_client = StockHistoricalDataClient(api_key=api_key, secret_key=secret)
 
         self._account_number = self.client.get_account().account_number
 
@@ -42,8 +40,7 @@ class Alpaca(Broker):
             )
         except APIError as e:
             raise IOError(
-                f"failed to place market {side} order from Alpaca "
-                f"for {name} with error: {e}"
+                f"failed to place market {side} order from Alpaca " f"for {name} with error: {e}"
             )
 
         return str(order.id)

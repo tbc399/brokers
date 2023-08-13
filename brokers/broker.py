@@ -6,8 +6,6 @@ from os import environ
 from typing import Collection, List, Tuple
 
 
-
-
 import httpx
 from alpaca.common import APIError
 from alpaca.data import StockHistoricalDataClient, StockLatestQuoteRequest
@@ -63,6 +61,11 @@ class OrderStatus(Enum):
     ERROR = "error"
     HELD = "held"
     PENDING_NEW = "pending_new"
+
+
+class OrderType(Enum):
+    MARKET = "market"
+    LIMIT = "limit"
 
 
 class MarketDay(BaseModel):
@@ -221,7 +224,3 @@ class Broker(ABC):
     @abstractmethod
     async def calendar(self) -> List[MarketDay]:
         pass
-
-
-
-

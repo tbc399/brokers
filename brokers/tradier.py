@@ -34,7 +34,6 @@ class Tradier(Broker):
 
         self._headers = dict(Accept="application/json", Authorization=f"Bearer {access_token}")
 
-
     def _build_url(self, path):
         hydrated_path = path.replace("[[account]]", self._account_number).strip("/")
         return f"https://{self._api_url}/{self._api_version}/{hydrated_path}"
@@ -369,5 +368,3 @@ class Tradier(Broker):
             )
 
         return None
-
-
