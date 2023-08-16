@@ -1,4 +1,4 @@
-from broker import Broker, OrderType, AccountBalance, Order
+from broker import Broker, OrderType, AccountBalance, Order, OrderStatus
 from typing import Collection
 from tenacity import AsyncRetrying, stop_after_attempt
 import httpx
@@ -113,7 +113,8 @@ class TradeStation(Broker):
             async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
                 with attempt:
                     response = await client.get(
-                        url=self._build_url(f"/accounts/[[account]]/orders"), headers=self._headers
+                        url=self._build_url(f"brokerage/accounts/{self._account_number}/orders"),
+                        headers=self._headers,
                     )
 
         if response.status_code != httpx.codes.OK:
@@ -122,7 +123,7 @@ class TradeStation(Broker):
                 f"{response.status_code}: {response.text}"
             )
 
-        orders = response.json()["orders"]
+        orders = response.json()["Orders"]
         orders = (
             []
             if orders == "null"
@@ -133,11 +134,11 @@ class TradeStation(Broker):
 
         return [
             Order(
-                id=order["id"],
-                name=order["symbol"],
-                side=order["side"],
-                type=order["type"],
-                status=OrderStatus(order["status"]),
+                id=order["OrderID"],
+                name=order["Legs"][0]['Symbol'],
+                side=order["Legs"][0]['BuyOrSell'],
+                type=order["OrderType"],
+                status=OrderStatus(order["Status"]),
                 executed_quantity=int(float(order["exec_quantity"])),
                 avg_fill_price=float(order["avg_fill_price"]),
             )
