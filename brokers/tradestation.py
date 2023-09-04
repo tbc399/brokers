@@ -1,12 +1,23 @@
-from broker import Broker, OrderType, AccountBalance, Order, OrderStatus
-from typing import Collection
-from tenacity import AsyncRetrying, stop_after_attempt
+from typing import Collection, List
+
 import httpx
+from .broker import (
+    AccountBalance,
+    Broker,
+    Order,
+    OrderStatus,
+    OrderType,
+    Quote,
+    ReturnStream,
+)
+from tenacity import AsyncRetrying, stop_after_attempt
 
 _order_type_map = {
     OrderType.LIMIT: "Limit",
     OrderType.MARKET: "Market",
 }
+
+_order_status_map = {"OPN": "open"}
 
 
 class TradeStation(Broker):
@@ -75,10 +86,33 @@ class TradeStation(Broker):
         raise NotImplementedError("Still need to implement this")
 
     async def get_quote(self, name: str) -> Quote:
-        raise NotImplementedError()
+        quotes = await self.get_quotes([name])
+        return quotes[0]
 
     async def get_quotes(self, names: Collection[str]) -> List[Quote]:
-        raise NotImplementedError()
+        if not names:
+            return []
+
+        async with httpx.AsyncClient() as client:
+            async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
+                with attempt:
+                    response = await client.get(
+                        url=self._build_url(f"/marketdata/quotes/{','.join(names)}"),
+                        headers=self._headers,
+                    )
+
+        if response.status_code != httpx.codes.OK:
+            raise IOError(
+                f"failed to get quotes from Tradestation for symbol(s) {names} "
+                f"with a status code of {response.status_code}: {response.text}"
+            )
+
+        quotes = response.json()["Quotes"]
+
+        if isinstance(quotes, list):
+            return [Quote(name=quote["Symbol"], price=float(quote["Last"])) for quote in quotes]
+        else:
+            return [Quote(name=quotes["Symbol"], price=float(quotes["Last"]))]
 
     @property
     async def account_balance(self) -> AccountBalance:
@@ -105,6 +139,34 @@ class TradeStation(Broker):
             open_pl=float(balances["BalanceDetails"]["UnrealizedProfitloss"]),
             long_value=float(balances["MarketValue"]),
             settled_cash=None,
+        )
+
+    async def order_status(self, order_id: str) -> Order:
+        async with httpx.AsyncClient() as client:
+            async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
+                with attempt:
+                    response = await client.get(
+                        url=self._build_url(f"/brokerage/accounts/{self._account_number}/orders/{order_id}"),
+                        headers=self._headers,
+                    )
+
+        if response.status_code != httpx.codes.OK:
+            raise IOError(
+                f"failed to get order status for order {order_id} "
+                f"{self._account_number} with a status code of "
+                f"{response.status_code}: {response.text}"
+            )
+
+        order = response.json()["Orders"][0]
+
+        return Order(
+            id=order_id,
+            name=order["Legs"][0]["Symbol"],
+            side=order["Legs"][0]["BuyOrSell"],
+            type=order["Legs"][0]["OrderType"],
+            status=OrderStatus(order["Status"]),
+            executed_quantity=int(float(order["Legs"][0]["ExecQuantity"])),
+            avg_fill_price=None,
         )
 
     @property
@@ -135,25 +197,34 @@ class TradeStation(Broker):
         return [
             Order(
                 id=order["OrderID"],
-                name=order["Legs"][0]['Symbol'],
-                side=order["Legs"][0]['BuyOrSell'],
+                name=order["Legs"][0]["Symbol"],
+                side=order["Legs"][0]["BuyOrSell"],
                 type=order["OrderType"],
                 status=OrderStatus(order["Status"]),
-                executed_quantity=int(float(order["exec_quantity"])),
-                avg_fill_price=float(order["avg_fill_price"]),
+                executed_quantity=int(float(order["Legs"][0]["ExecQuantity"])),
+                avg_fill_price=None,
             )
             for order in orders
         ]
 
     async def cancel_order(self, order_id):
-        raise NotImplementedError()
+        async with httpx.AsyncClient() as client:
+            async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
+                with attempt:
+                    response = await client.delete(
+                        url=self._build_url(f"/orderexecution/orders/{order_id}"),
+                        headers=self._headers,
+                    )
+
+        if response.status_code != httpx.codes.OK:
+            raise IOError(
+                f"failed to delete order with a status code of "
+                f"{response.status_code}: {response.text}"
+            )
 
     @property
     async def account_pnl(self) -> ReturnStream:
         raise NotImplementedError()
 
     async def account_history(self):
-        raise NotImplementedError()
-
-    async def calendar(self) -> List[MarketDay]:
         raise NotImplementedError()

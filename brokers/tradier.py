@@ -1,4 +1,4 @@
-from broker import Broker, AccountBalance, MarketDay
+from .broker import Broker, AccountBalance, MarketDay
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
