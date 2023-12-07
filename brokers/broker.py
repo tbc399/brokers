@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Collection, List, Tuple
+from typing import Collection, List, Tuple, Union
 
 
 from pydantic import BaseModel
@@ -65,7 +65,7 @@ class MarketDay(BaseModel):
 
 
 class Order(BaseModel):
-    id: str
+    id: Union[str, int]
     name: str
     side: str
     type: str
