@@ -215,3 +215,51 @@ class Broker(ABC):
     @abstractmethod
     async def calendar(self) -> List[MarketDay]:
         pass
+
+
+class CompositeAccount(Broker):
+    def __int__(self, *brokers, distribute=False):
+        """
+
+        :param brokers:
+        :param distribute: If True, each position is "distributed" across all accounts
+        :return:
+        """
+        pass
+    
+    async def place_market_sell(self, name: str, quantity: int):
+        pass
+    
+    async def place_market_buy(self, name: str, quantity: int):
+        pass
+    
+    @property
+    async def positions(self) -> List[Position]:
+        pass
+    
+    async def get_quote(self, name: str) -> Quote:
+        pass
+    
+    async def get_quotes(self, names: Collection[str]) -> List[Quote]:
+        pass
+    
+    @property
+    async def account_balance(self) -> AccountBalance:
+        pass
+    
+    @property
+    async def orders(self) -> Collection[Order]:
+        pass
+    
+    async def cancel_order(self, order_id):
+        pass
+    
+    @property
+    async def account_pnl(self) -> ReturnStream:
+        pass
+    
+    async def account_history(self):
+        pass
+    
+    async def calendar(self) -> List[MarketDay]:
+        pass

@@ -146,7 +146,9 @@ class TradeStation(Broker):
             async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
                 with attempt:
                     response = await client.get(
-                        url=self._build_url(f"/brokerage/accounts/{self._account_number}/orders/{order_id}"),
+                        url=self._build_url(
+                            f"/brokerage/accounts/{self._account_number}/orders/{order_id}"
+                        ),
                         headers=self._headers,
                     )
 
