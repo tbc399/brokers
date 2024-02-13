@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 
 import httpx
 from .broker import (
+    MarketDay,
     AccountBalance,
+    Position,
     Broker,
     Order,
     OrderStatus,
@@ -273,3 +275,35 @@ class TradeStation(Broker):
 
     async def account_history(self):
         raise NotImplementedError()
+
+    @property
+    async def positions(self) -> List[Position]:
+        async with httpx.AsyncClient() as client:
+            async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):
+                with attempt:
+                    response = await client.get(
+                        url=self._build_url("/brokerage/accounts/[[account]]/positions/"),
+                        headers=self._headers(),
+                    )
+
+        if response.status_code != httpx.codes.OK:
+            raise IOError(
+                f"failed to get account positions for account "
+                f"{self._account_number} with a status code of "
+                f"{response.status_code}: {response.text}"
+            )
+
+        positions = response.json()["Positions"]
+
+        return [
+            Position(
+                name=pos["Symbol"],
+                size=pos["Quantity"],
+                cost_basis=pos["TotalCost"],
+                time_opened=datetime.strptime(pos["Timestamp"], "%Y-%m-%dT%H:%M:%SZ"),
+            )
+            for pos in positions
+        ]
+
+    async def calendar(self) -> List[MarketDay]:
+        raise NotImplementedError("calendar is not implemented")
