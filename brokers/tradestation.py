@@ -51,7 +51,7 @@ class TradeStation(Broker):
 
         return dict(Authorization=f"Bearer {self._access_token}")
 
-    def _refresh_token(self):
+    async def _refresh_token(self):
         payload = {
             "grant_type": "refresh_token",
             "client_id": self.client_id,
