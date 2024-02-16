@@ -88,6 +88,10 @@ class Tradier(Broker):
         return await self._place_order(name, quantity, "sell", "stop", price)
 
     @property
+    def account_number(self) -> str:
+        return self._account_number
+
+    @property
     async def account_balance(self) -> AccountBalance:
         async with httpx.AsyncClient() as client:
             async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):

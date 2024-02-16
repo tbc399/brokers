@@ -160,6 +160,10 @@ class TradeStation(Broker):
             return [Quote(name=quotes["Symbol"], price=float(quotes["Last"]))]
 
     @property
+    def account_number(self) -> str:
+        return self._account_number
+
+    @property
     async def account_balance(self) -> AccountBalance:
         async with httpx.AsyncClient() as client:
             async for attempt in AsyncRetrying(stop=stop_after_attempt(4)):

@@ -181,6 +181,11 @@ class Broker(ABC):
     async def positions(self) -> List[Position]:
         pass
 
+    @property
+    @abstractmethod
+    def account_number(self) -> str:
+        pass
+
     @abstractmethod
     async def get_quote(self, name: str) -> Quote:
         pass
