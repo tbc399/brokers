@@ -47,9 +47,9 @@ class TradeStation(Broker):
     def _expired_token(self):
         return datetime.now() >= self._expiration_time
 
-    def _headers(self):
+    async def _headers(self):
         if not self._access_token or self._expired_token():
-            self._access_token, self._expiration_time = self._refresh_token()
+            self._access_token, self._expiration_time = await self._refresh_token()
 
         return dict(Authorization=f"Bearer {self._access_token}")
 
@@ -104,7 +104,7 @@ class TradeStation(Broker):
                     response = await client.post(
                         url=self._build_url("orderexecution/orders"),
                         json=payload,
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
@@ -143,7 +143,7 @@ class TradeStation(Broker):
                 with attempt:
                     response = await client.get(
                         url=self._build_url(f"/marketdata/quotes/{','.join(names)}"),
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
@@ -198,7 +198,7 @@ class TradeStation(Broker):
                         url=self._build_url(
                             f"/brokerage/accounts/{self._account_number}/orders/{order_id}"
                         ),
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
@@ -227,7 +227,7 @@ class TradeStation(Broker):
                 with attempt:
                     response = await client.get(
                         url=self._build_url(f"brokerage/accounts/{self._account_number}/orders"),
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
@@ -264,7 +264,7 @@ class TradeStation(Broker):
                 with attempt:
                     response = await client.delete(
                         url=self._build_url(f"/orderexecution/orders/{order_id}"),
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
@@ -287,7 +287,7 @@ class TradeStation(Broker):
                 with attempt:
                     response = await client.get(
                         url=self._build_url("/brokerage/accounts/[[account]]/positions/"),
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
