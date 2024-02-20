@@ -170,7 +170,7 @@ class TradeStation(Broker):
                 with attempt:
                     response = await client.get(
                         url=self._build_url(f"brokerage/accounts/{self._account_number}/balances"),
-                        headers=self._headers(),
+                        headers=await self._headers(),
                     )
 
         if response.status_code != httpx.codes.OK:
