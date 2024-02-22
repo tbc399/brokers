@@ -61,12 +61,13 @@ class TradeStation(Broker):
             "refresh_token": self.refresh_token,
         }
 
+        print(payload)
         async with httpx.AsyncClient() as client:
             async for attempt in AsyncRetrying(stop=stop_after_attempt(3)):
                 with attempt:
                     resp = await client.post(
                         url=self._build_url("oauth/token"),
-                        data=payload,
+                        params=payload,
                     )
 
         if not httpx.codes.is_success(resp.status_code):
