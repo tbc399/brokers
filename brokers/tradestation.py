@@ -190,7 +190,7 @@ class TradeStation(Broker):
         return AccountBalance(
             total_cash=float(balances["CashBalance"]),
             total_equity=float(balances["Equity"]),
-            open_pl=float(balances["BalanceDetail"]["UnrealizedProfitloss"]),
+            open_pl=float(balances["BalanceDetail"]["UnrealizedProfitLoss"]),
             long_value=float(balances["MarketValue"]),
             settled_cash=None,
         )
