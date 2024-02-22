@@ -39,6 +39,7 @@ class TradeStation(Broker):
             raise ValueError("must have a client secret to instantiate Tradestation broker")
 
         self._api_url = kwargs.get("url", "api.tradestation.com").strip("/")
+        self._signin_url = "signin.tradestation.com"
         self._api_version = kwargs.get("version", "v3").strip("/")
 
         self._access_token = None
@@ -66,8 +67,8 @@ class TradeStation(Broker):
             async for attempt in AsyncRetrying(stop=stop_after_attempt(3)):
                 with attempt:
                     resp = await client.post(
-                        url=self._build_url("oauth/token"),
-                        params=payload,
+                        url=self._build_signin_url("oauth/token"),
+                        data=payload,
                     )
 
         if not httpx.codes.is_success(resp.status_code):
@@ -81,6 +82,9 @@ class TradeStation(Broker):
 
     def _build_url(self, path):
         return f"https://{self._api_url}/{self._api_version}/{path.strip('/')}"
+
+    def _build_signin_url(self, path):
+        return f"https://{self._signin_url}/{path.strip('/')}"
 
     async def _place_order(
         self,
